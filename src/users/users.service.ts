@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -25,28 +27,33 @@ export class UsersService {
   ];
   findAll(role?: 'INTERN' | 'ENGINEER' | 'ADMIN') {
     if (role) {
-      return this.users.filter((user) => user.role === role);
+      const rolesArray = this.users.filter((user) => user.role === role);
+      if (rolesArray.length === 0)
+        throw new NotFoundException('User Role Not Found');
+      return rolesArray;
     }
     return this.users;
   }
 
   findOne(id: number) {
     const user = this.users.find((user) => user.id === id);
-  return user
+    if (!user) throw new NotFoundException('User Not Found');
+    return user;
   }
-  
-  create(user: { name: string; email: string; role: 'INTERN' | 'ENGINEER' | 'ADMIN' }) {
+
+  create(user: CreateUserDto) {
+    const highestId = Math.max(...this.users.map((user) => user.id), 0);
     const newUser = {
-      id: this.users.length + 1,
+      id: highestId + 1,
       ...user,
     };
     this.users.push(newUser);
     return newUser;
   }
-  update(id: number, userUpdate: Partial<{ name?: string; email?: string; role?: 'INTERN' | 'ENGINEER' | 'ADMIN' }>) {
+  update(id: number, userUpdate: UpdateUserDto) {
     const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
-      return null;
+      throw new NotFoundException('User Not Found');
     }
     this.users[userIndex] = { ...this.users[userIndex], ...userUpdate };
     return this.users[userIndex];
@@ -54,10 +61,9 @@ export class UsersService {
   delete(id: number) {
     const userIndex = this.users.findIndex((user) => user.id === id);
     if (userIndex === -1) {
-      return null;
+      throw new NotFoundException('User Not Found');
     }
-    const deletedUser = this.users.splice(userIndex, 1);
-    return deletedUser[0];
+    const [deletedUser] = this.users.splice(userIndex, 1);
+    return deletedUser;
   }
-
 }

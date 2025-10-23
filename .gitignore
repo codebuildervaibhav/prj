@@ -2,7 +2,7 @@
 /dist
 /node_modules
 /build
-
+migration_lock.toml
 # Logs
 logs
 *.log
